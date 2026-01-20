@@ -1,5 +1,6 @@
 import os
 import json
+import copy
 import base64
 import asyncio
 import websockets
@@ -26,7 +27,7 @@ async def handle_voicebot_session_openai(
     """
     diagram_state = {"in_progress": False, "task_id": None}
     cm = ConfigManager(provider="openai")
-    session_cfg = cm.get_config()
+    session_cfg = copy.deepcopy(cm.get_config())
     session_cfg["session"]["instructions"] = voice_prompt
 
     async with websockets.connect(

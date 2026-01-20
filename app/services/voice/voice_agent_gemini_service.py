@@ -1,5 +1,6 @@
 import os
 import json
+import copy
 import base64
 import asyncio
 import websockets
@@ -24,8 +25,8 @@ async def handle_voicebot_session_gemini(
     """
     diagram_state = {"in_progress": False, "task_id": None}
     cm = ConfigManager(provider="gemini")
-    session_cfg = cm.get_config()
-    session_cfg["session"]["instructions"] = voice_prompt
+    session_cfg = copy.deepcopy(cm.get_config())
+    session_cfg["setup"]["systemInstruction"]["parts"][0]["text"] = voice_prompt
 
     async with websockets.connect(
         GEMINI_WS_URL, additional_headers={"Content-Type": "application/json"}

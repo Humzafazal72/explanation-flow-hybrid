@@ -414,7 +414,7 @@
   </style>
 </head>
 <body>
-<h2>AI Tutor (OpenAI)</h2>
+<h2>AI Tutor (Gemini)</h2>
 <div id="status">Status: Not connected</div>
 <div id="metadata"></div>
 
@@ -731,10 +731,11 @@ function connect() {
     else if (msg.type === "DIAGRAM_FAILED") {
       showDiagramError();
     }
-    else if (msg.type === "response.audio.delta") playRealtime(msg.delta);
-    else if (msg.type === "response.text.delta") {
-      // Could show this in the modal status if desired
-      log(`Voicebot: ${msg.delta}`);
+    else if (msg.type === "AUDIO_DELTA") {
+      playRealtime(msg.delta);
+    }
+    else if (msg.type === "TURN_COMPLETE") {
+      log("Turn complete - waiting for next interaction");
     }
   };
   

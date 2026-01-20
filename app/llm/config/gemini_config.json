@@ -1,0 +1,69 @@
+{
+  "setup": {
+    "model": "models/gemini-2.0-flash-exp",
+    "systemInstruction": {
+      "parts": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    "generationConfig": {
+      "responseModalities": ["AUDIO"],
+      "speechConfig": {
+        "voiceConfig": {
+          "prebuiltVoiceConfig": {
+            "voiceName": "Aoede"
+          }
+        }
+      },
+      "temperature": 0.6,
+      "maxOutputTokens": 4096
+    },
+    "tools": [
+      {
+        "functionDeclarations": [
+          {
+            "name": "show_on_board",
+            "description": "Display key equations, formulas, definitions, or important phrases on the virtual whiteboard. Use only for content students should see written down.",
+            "parameters": {
+              "type": "OBJECT",
+              "properties": {
+                "content": {
+                  "type": "STRING",
+                  "description": "The exact text to display (equation, key term, or short phrase)"
+                },
+                "type": {
+                  "type": "STRING",
+                  "enum": [
+                    "equation",
+                    "definition",
+                    "key_point",
+                    "diagram_label",
+                    "examples"
+                  ],
+                  "description": "The type of content being displayed"
+                }
+              },
+              "required": ["content", "type"]
+            }
+          },
+          {
+            "name": "generate_diagram",
+            "description": "Generate a mathematical diagram or plot for visualization",
+            "parameters": {
+              "type": "OBJECT",
+              "properties": {
+                "prompt": {
+                  "type": "STRING",
+                  "description": "Clear description of the diagram to generate, including labels and relationships."
+                }
+              },
+              "required": ["prompt"]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
