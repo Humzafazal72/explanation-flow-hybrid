@@ -3,7 +3,7 @@ from aiosqlite import Connection
 from fastapi import APIRouter, WebSocket, Depends, WebSocketDisconnect, Path
 
 from Database import get_db
-from utils import s3_client, build_voicebot_prompt, safe_send_ws
+from utils import s3_client, build_voicebot_prompt, safe_send_ws, logger
 from services.voice import (
     tts_openai,
     handle_voicebot_session_openai,
@@ -147,7 +147,7 @@ async def get_explanation(
                     await safe_send_ws(ws=websocket, data=data)
 
     except WebSocketDisconnect:
-        await websocket.close()
+        logger.warning("Client Websocket closed/Disconnected.")
 
     except Exception as e:
         print(e)
