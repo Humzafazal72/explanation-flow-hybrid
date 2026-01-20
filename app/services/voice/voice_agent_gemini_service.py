@@ -9,7 +9,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from llm.config import ConfigManager
 from utils import logger, safe_send_ws
 from celery_tasks import generate_diagram
-from app.services.voice.diagram_monitoring import handle_diagram_result
+from services.voice.diagram_monitoring import handle_diagram_result
 
 GEMINI_WS_URL = os.environ.get("GEMINI_WS_URL")
 

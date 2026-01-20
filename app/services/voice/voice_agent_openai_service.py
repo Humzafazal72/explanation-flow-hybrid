@@ -6,9 +6,9 @@ import asyncio
 import websockets
 from fastapi import WebSocket, WebSocketDisconnect
 
-from app.services.voice.diagram_monitoring import safe_send_ws
+from services.voice.diagram_monitoring import safe_send_ws
 from celery_tasks import generate_diagram
-from app.services.voice.diagram_monitoring import handle_diagram_result
+from services.voice.diagram_monitoring import handle_diagram_result
 from llm.config import ConfigManager
 from utils import logger
 
