@@ -136,8 +136,8 @@ async def get_explanation(
                     await safe_send_ws(ws=websocket, data=data)
 
                     # start the voicebot flow
-                    #await handle_voicebot_session_openai(websocket, voice_prompt)
-                    await handle_voicebot_session_gemini(websocket, voice_prompt)
+                    await handle_voicebot_session_openai(websocket, voice_prompt)
+                    #await handle_voicebot_session_gemini(websocket, voice_prompt)
 
                     data = {
                         "type": "VOICEBOT_EXIT",
