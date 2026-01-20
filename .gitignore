@@ -1,0 +1,9 @@
+.env
+
+gemini.py
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+app/temp/

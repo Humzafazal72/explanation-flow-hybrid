@@ -1,0 +1,60 @@
+{
+    "type": "session.update",
+    "session": {
+        "instructions": "",
+        "turn_detection": {
+            "type": "server_vad",
+            "threshold": 0.95,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": 500
+        },
+        "voice": "shimmer",
+        "temperature": 0.6,
+        "max_response_output_tokens": 4096,
+        "modalities": ["text", "audio"],
+        "input_audio_format": "pcm16",
+        "output_audio_format": "pcm16",
+        "input_audio_transcription": {
+            "model": "whisper-1",
+            "language": "en"
+        },
+        "tools": [
+            {
+                "type": "function",
+                "name": "show_on_board",
+                "description": "Display key equations, formulas, definitions, or important phrases on the virtual whiteboard. Use only for content students should see written down.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "content": {
+                            "type": "string",
+                            "description": "The exact text to display (equation, key term, or short phrase)"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": ["equation", "definition", "key_point", "diagram_label", "examples"],
+                            "description": "The type of content being displayed"
+                        }
+                    },
+                    "required": ["content", "type"]
+                }
+            },
+            {
+              "type": "function",
+              "name": "generate_diagram",
+              "description": "Generate a mathematical diagram or plot for visualization",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "description": "Clear description of the diagram to generate, including labels and relationships."
+                  }
+                },
+                "required": ["prompt"]
+              }
+            }
+        ],
+        "tool_choice": "auto"
+    }
+}
