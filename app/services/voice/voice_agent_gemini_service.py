@@ -27,7 +27,7 @@ async def handle_voicebot_session_gemini(
     cm = ConfigManager(provider="gemini")
     session_cfg = copy.deepcopy(cm.get_config())
     session_cfg["setup"]["systemInstruction"]["parts"][0]["text"] = voice_prompt
-
+    
     async with websockets.connect(
         GEMINI_WS_URL, additional_headers={"Content-Type": "application/json"}
     ) as gemini_ws:
@@ -92,9 +92,9 @@ async def handle_voicebot_session_gemini(
                     try:
                         gemini_msg = await gemini_ws.recv()
                         gemini_response = json.loads(gemini_msg)
-
+                        
                         # for audio/text data from gemini
-                        if hasattr(gemini_response, "serverContent"):
+                        if "serverContent" in gemini_response:
                             model_turn = gemini_response["serverContent"].get(
                                 "modelTurn", None
                             )
@@ -115,7 +115,7 @@ async def handle_voicebot_session_gemini(
                                     #     logger.info(f"Gemini Text: {part['text']}")
 
                         # for function call from gemini
-                        elif hasattr(gemini_response, "toolCall"):
+                        elif "toolCall" in gemini_response:
                             function_calls = gemini_response["toolCall"][
                                 "functionCalls"
                             ]
@@ -326,7 +326,7 @@ async def handle_voicebot_session_gemini(
                                         )
                                         continue  # Continue the loop, don't break
 
-                        elif hasattr(gemini_response, "turnComplete"):
+                        elif "turnComplete" in gemini_response:
                             await safe_send_ws(
                                 client_ws, data={"type": "TURN_COMPLETE"}
                             )
@@ -351,8 +351,8 @@ async def handle_voicebot_session_gemini(
 
         # Both functions will run concurrently. If one function ends (loop in one of the
         # function breaks) both functions are stopped.
-        recv_task = asyncio.create_task(ai_to_client, "recv_task")
-        send_task = asyncio.create_task(client_to_ai, "send_task")
+        recv_task = asyncio.create_task(ai_to_client(), name="recv_task")
+        send_task = asyncio.create_task(client_to_ai(), name="send_task")
 
         done, pending = await asyncio.wait(
             [recv_task, send_task], return_when=asyncio.FIRST_COMPLETED
