@@ -37,7 +37,7 @@ async def get_explanation(
             (concept_id,),
         )
         snippet_obj = await db.execute(
-            f"""SELECT step_num, snippet_num, snippet_text FROM snippets 
+            f"""SELECT step_num, snippet_num, snippet_text FROM step_snippets 
                             WHERE lesson_id=? ORDER BY step_num ASC""",
             (concept_id,),
         )
@@ -46,15 +46,39 @@ async def get_explanation(
                             WHERE lesson_id=? ORDER BY step_num ASC""",
             (concept_id,),
         )
+        tts_context_obj = await db.execute(
+            f"""SELECT snippet_text,snippet_num FROM context_snippets 
+                            WHERE lesson_id=? ORDER BY snippet_num ASC""",
+            (concept_id,),
+        )
+        tts_conclusion_obj = await db.execute(
+            f"""SELECT snippet_text,snippet_num FROM conclusion_snippets 
+                            WHERE lesson_id=? ORDER BY snippet_num ASC""",
+            (concept_id,),
+        )
 
         concept_name = concept_name_obj[0][0]
         conclusion = conclusion_obj[0][0]
         context = context_obj[0][0]
 
-        # get all the steps in a list in sorted order
+        # get all snippets for conclusion
+        conclusion_snippets = []
+        for snippet_text, snippet_num in tts_conclusion_obj.rows:
+            conclusion_snippets.append((snippet_num, snippet_text))
+
+        # get all snippets for context
+        context_snippets = []
+        for snippet_text, snippet_num in tts_context_obj.rows:
+            context_snippets.append((snippet_num, snippet_text))
+
+        # get the tts data for all explanation steps
         explanation_steps = {}
         for step_num, step_text in tts_steps_obj.rows:
-            explanation_steps.setdefault(step_num, {})["text"] = step_text
+            explanation_steps.setdefault(step_num, {})["tts_text"] = step_text
+        
+        # get all the steps in a list in sorted order
+        for step_num, step_text in explanation_steps_obj.rows:
+            explanation_steps[step_num]["sub_text"] = step_text
 
         # get all snippets in a list in sorted order
         for snippet_row in snippet_obj.rows:
@@ -66,18 +90,25 @@ async def get_explanation(
             )
 
         # get diagram data from object storage
-        prefix = f"{concept_id}/"
+        prefix = f"Diagrams/{concept_id}/"
 
         response = s3_client.list_objects_v2(Bucket="explanation-dev", Prefix=prefix)
-        url_data = {}
+        
+        # Check if the bucket/prefix actually contains files
+        if "Contents" not in response:
+            await safe_send_ws(websocket, {"status": "error", "data": "This lesson doesn't have any diagrams"})
+            await websocket.close()
+            return
 
+        url_data = {}
         for obj in response["Contents"]:
-            if obj["Key"] == prefix or "metadata" in obj["Key"]:
+            key = obj["Key"]
+            if key == prefix or "metadata" in key:
                 continue
-            fig_name = obj["Key"].split("/")[-1].split(".")[0]
+            fig_name = key.split("/")[-1].split(".")[0]
             url_data[fig_name] = s3_client.generate_presigned_url(
                 ClientMethod="get_object",
-                Params={"Bucket": "explanation-dev", "Key": obj["Key"]},
+                Params={"Bucket": "explanation-dev", "Key": key},
                 ExpiresIn=7200,
             )
 
@@ -88,6 +119,10 @@ async def get_explanation(
             "name": concept_name,
             "num_steps": len(explanation_steps),
         }
+        print("Conclusion Snippets: \n",conclusion_snippets)
+        print("Context Snippets: \n",context_snippets)
+        print("Explanation Steps: \n",explanation_steps)
+
         await safe_send_ws(ws=websocket, data=data)
 
         # Main Event Loop
@@ -103,18 +138,19 @@ async def get_explanation(
                 "part"
             ]:  # check what part of the explanation needs to be streamed i.e context, conlusion or one of the explanation steps
                 case "CONTEXT":
-                    async for chunk in tts_openai(context):
+                    async for chunk in tts_openai(tts_text = context, snippets=context_snippets):
                         await websocket.send_json(chunk)
 
                 case "CONCLUSION":
-                    async for chunk in tts_openai(conclusion):
+                    async for chunk in tts_openai(tts_text = conclusion, snippets=conclusion_snippets):
                         await websocket.send_json(chunk)
 
                 case "EXPLANATION_STEP":
                     index = state_data["index"]
                     async for chunk in tts_openai(
                         snippets=explanation_steps[index].get("snippets", None),
-                        text=explanation_steps[index]["text"],
+                        tts_text=explanation_steps[index]["tts_text"],
+                        sub_text=explanation_steps[index]["sub_text"],
                         image_url=url_data.get(f"fig_{index}", None),
                     ):
                         await websocket.send_json(chunk)
@@ -122,7 +158,7 @@ async def get_explanation(
                 case "VOICEBOT":
                     index = state_data["index"]
                     explained_steps = [
-                        explanation_steps[i]["text"] for i in range(index + 1)
+                        explanation_steps[i]["sub_text"] for i in range(index + 1)
                     ]  # [r for r in explained_steps[: index + 1]["text"]]
                     voice_prompt = build_voicebot_prompt(
                         concept_name, context, explained_steps
@@ -149,14 +185,14 @@ async def get_explanation(
     except WebSocketDisconnect:
         logger.warning("Client Websocket closed/Disconnected.")
 
-    except Exception as e:
-        print(e)
-        success = await safe_send_ws(
-            ws=websocket, data={"status": "error", "data": str(e)}
-        )
-        if success:
-            await websocket.close()
-        return
+    # except Exception as e:
+    #     print(e)
+    #     success = await safe_send_ws(
+    #         ws=websocket, data={"status": "error", "data": str(e)}
+    #     )
+    #     if success:
+    #         await websocket.close()
+    #     return
 
 
 ############################################################################
