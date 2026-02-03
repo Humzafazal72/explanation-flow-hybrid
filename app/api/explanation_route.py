@@ -18,7 +18,6 @@ async def get_explanation(
     websocket: WebSocket, concept_id: int = Path(), db: Connection = Depends(get_db)
 ):
     await websocket.accept()
-
     try:
 
         # get data from the db
@@ -185,14 +184,14 @@ async def get_explanation(
     except WebSocketDisconnect:
         logger.warning("Client Websocket closed/Disconnected.")
 
-    # except Exception as e:
-    #     print(e)
-    #     success = await safe_send_ws(
-    #         ws=websocket, data={"status": "error", "data": str(e)}
-    #     )
-    #     if success:
-    #         await websocket.close()
-    #     return
+    except Exception as e:
+        print(e)
+        success = await safe_send_ws(
+            ws=websocket, data={"status": "error", "data": str(e)}
+        )
+        if success:
+            await websocket.close()
+        return
 
 
 ############################################################################
