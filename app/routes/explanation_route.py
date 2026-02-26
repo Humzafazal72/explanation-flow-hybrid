@@ -17,8 +17,8 @@ router = APIRouter()
 async def get_explanation(
     websocket: WebSocket, concept_id: int = Path(), db: Connection = Depends(get_db)
 ):
-    await websocket.accept()
-    try:
+        await websocket.accept()
+    #try:
 
         # get data from the db
         concept_name_obj = await db.execute(
@@ -73,8 +73,8 @@ async def get_explanation(
         # get the tts data for all explanation steps
         explanation_steps = {}
         for step_num, step_text in tts_steps_obj.rows:
-            explanation_steps.setdefault(step_num, {})["tts_text"] = step_text
-        
+            explanation_steps.setdefault(int(step_num), {})["tts_text"] = step_text
+        print(explanation_steps)
         # get all the steps in a list in sorted order
         for step_num, step_text in explanation_steps_obj.rows:
             explanation_steps[step_num]["sub_text"] = step_text
@@ -181,17 +181,17 @@ async def get_explanation(
                     }
                     await safe_send_ws(ws=websocket, data=data)
 
-    except WebSocketDisconnect:
-        logger.warning("Client Websocket closed/Disconnected.")
+    # except WebSocketDisconnect:
+    #     logger.warning("Client Websocket closed/Disconnected.")
 
-    except Exception as e:
-        print(e)
-        success = await safe_send_ws(
-            ws=websocket, data={"status": "error", "data": str(e)}
-        )
-        if success:
-            await websocket.close()
-        return
+    # except Exception as e:
+    #     print(e)
+    #     success = await safe_send_ws(
+    #         ws=websocket, data={"status": "error", "data": str(e)}
+    #     )
+    #     if success:
+    #         await websocket.close()
+    #     return
 
 
 ############################################################################
