@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from api import explanation_route
+from routes import explanation_route
 
 app = FastAPI()
 
