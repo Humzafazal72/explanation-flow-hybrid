@@ -11,4 +11,4 @@ app.include_router(explanation_route.router, prefix="", tags=["Agents"])
 
 @app.get("/")
 async def health_check():
-    return {"Data":"Working", "status":200}
+    return {"data":"Working", "status":200}
